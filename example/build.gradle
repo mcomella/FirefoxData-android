@@ -4,6 +4,16 @@
 
 apply plugin: 'com.android.application'
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.6.4'
+    }
+}
+
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
@@ -25,6 +35,10 @@ android {
         }
     }
 }
+
+apply plugin: 'com.getkeepsafe.dexcount'
+// 29563 used.
+// 35972 remain.
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
