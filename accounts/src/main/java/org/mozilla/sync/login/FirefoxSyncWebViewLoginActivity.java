@@ -143,6 +143,7 @@ public class FirefoxSyncWebViewLoginActivity extends AppCompatActivity {
                 case "fxaccounts:loaded": onLoaded(); break;
                 case "fxaccounts:can_link_account": onCanLinkAccount(command, messageID, data); break;
                 case "fxaccounts:login": onLogin(data); break;
+                case "fxaccounts:verified": onVerified(data); break;
 
                 case "fxaccounts_delete_account": // fall through
                 case "fxaccount:change_password": // fall through
@@ -170,7 +171,17 @@ public class FirefoxSyncWebViewLoginActivity extends AppCompatActivity {
     }
 
     private void onLogin(@Nullable final String data) {
-        // The user has signed in to a Firefox Account. We're done!
+        // If the user has already verified their account, we're done!
+        // Otherwise, the user has to verify their account first.
+        onReceivedAccount(data);
+    }
+
+    private void onVerified(@Nullable final String data) {
+        // The user has verified their account - we're done!
+        onReceivedAccount(data);
+    }
+
+    private void onReceivedAccount(@Nullable final String data) {
         final FirefoxAccount account = FirefoxAccount.fromWebFlow(endpointConfig, data);
         if (account == null) {
             Log.e(LOGTAG, "Account received from server is corrupted. Returning from login...");
@@ -179,17 +190,14 @@ public class FirefoxSyncWebViewLoginActivity extends AppCompatActivity {
             return;
         }
 
-        final Intent resultIntent = new Intent(ACTION_WEB_VIEW_LOGIN_RETURN);
-        resultIntent.putExtra(EXTRA_ACCOUNT, account);
-        setResult(RESULT_OK, resultIntent);
-
-        if (!account.accountState.verified) {
-            // User should stay in the flow to verify their account. However, we don't get notified when the account is
-            // verified so the user has to manually close the view.
-            return;
+        // The user needs to verify their account before it's useful to us. If
+        // the user has not verified, the site will prompt them to verify.
+        if (account.accountState.verified) {
+            final Intent resultIntent = new Intent(ACTION_WEB_VIEW_LOGIN_RETURN);
+            resultIntent.putExtra(EXTRA_ACCOUNT, account);
+            setResult(RESULT_OK, resultIntent);
+            finish();
         }
-
-        finish();
     }
 
     private void onLoaded() {
